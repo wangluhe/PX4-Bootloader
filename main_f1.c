@@ -306,7 +306,7 @@ int
 main(void)
 {
 	unsigned timeout = 0;
-
+	/* 主板初始化函数。主要配置LED灯光、USART通信接口和I2C通信接口相关的时钟、引脚。*/
 	/* do board-specific initialisation */
 	board_init();
 

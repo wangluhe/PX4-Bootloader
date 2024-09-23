@@ -57,6 +57,7 @@
  */
 
 /* Boot device selection list*/
+
 #define USB0_DEV       0x01
 #define SERIAL0_DEV    0x02
 #define SERIAL1_DEV    0x04
