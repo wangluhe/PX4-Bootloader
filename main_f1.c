@@ -310,11 +310,18 @@ main(void)
 	/* do board-specific initialisation */
 	board_init();
 
+/*判断是否启用BootLoader等待。如果启用，程序会先进入BootLoader，
+同时计时器启动，等待通过USART通信接口或USB通信接口与用户交互。
+如果在执行完一条命令后到达等待时间，则会离开BootLoader，
+开始执行用户程序。一般来说，USART通信接口或USB通信接口两者总有
+一个有定义。因此BootLoader等待在大多数情况下都是有效的。*/
 #if defined(INTERFACE_USART) || defined (INTERFACE_USB)
 	/* XXX sniff for a USART connection to decide whether to wait in the bootloader? */
 	timeout = BOOTLOADER_DELAY;
 #endif
 
+/* Bootloader不支持stm32f1系列的开发板的I2C接口。
+因此如果遇到想要启用I2C接口，程序会报错。*/
 #ifdef INTERFACE_I2C
 # error I2C bootloader detection logic not implemented
 #endif
@@ -324,6 +331,7 @@ main(void)
 		timeout = BOOTLOADER_DELAY;
 	}
 
+/*强制等待*/
 #ifdef BOARD_FORCE_BL_PIN
 
 	/* if the force-BL pin state matches the state of the pin, wait in the bootloader forever */
@@ -337,6 +345,10 @@ main(void)
 
 
 	/* if we aren't expected to wait in the bootloader, try to boot immediately */
+	/* 如果在hw_config.h中定义的BOOTLOADER_DELAY为0，
+	即没有BootLoader等待时间，那么尝试直接跳转到用户程序。
+	跳转成功会直接执行用户程序，
+	跳转失败会进入BootLoader并一直待在里面。 */
 	if (timeout == 0) {
 		/* try to boot immediately */
 		jump_to_app();
@@ -346,9 +358,12 @@ main(void)
 	}
 
 	/* configure the clock for bootloader activity */
+	/* 初始化BootLoader需要用到的时钟。如果定义了USB接口，
+	那么输出的时钟为48mhz。反之，输出的时钟为24mhz。 */
 	clock_init();
 
 	/* start the interface */
+	/* 初始化主板上的USART通信接口。 */
 	cinit(BOARD_INTERFACE_CONFIG, USART);
 
 	while (1) {

@@ -300,13 +300,17 @@ do_jump(uint32_t stacktop, uint32_t entrypoint)
 void
 jump_to_app()
 {
-	const uint32_t *app_base = (const uint32_t *)APP_LOAD_ADDRESS;
+	const uint32_t *app_base = (const uint32_t *)APP_LOAD_ADDRESS; // 飞控固件的起始地址,定义在hw_config.h中
 	const uint32_t *vec_base = (const uint32_t *)app_base;
 
 	/*
 	 * We refuse to program the first word of the app until the upload is marked
 	 * complete by the host.  So if it's not 0xffffffff, we should try booting it.
 	 */
+	
+	//1. 根据飞控固件的烧写约定，检测固件是否有效
+    //   飞控固件烧写时，我们特意约定最后烧写固件的首地址（飞控固件使用的堆栈首地址）。
+    //   若固件首地址为0xffffffff，表明固件烧写未完成（或固件无效）无法跳转，函数直接返回 */
 	if (app_base[0] == 0xffffffff) {
 		return;
 	}
@@ -382,14 +386,17 @@ jump_to_app()
 	 * The second word of the app is the entrypoint; it must point within the
 	 * flash area (or we have a bad flash).
 	 */
+	// 飞控固件的第二个32位代表飞控固件的入口地址。
+    // 若此地址未在固件指定的地址范围内，则表示固件有问题无法跳转，函数直接返回
 	if (app_base[1] < APP_LOAD_ADDRESS) {
 		return;
 	}
-
+	// 烧写内容太大返回
 	if (app_base[1] >= (APP_LOAD_ADDRESS + board_info.fw_size)) {
 		return;
 	}
 
+	/* 2. 现在飞控固件有效，反向初始化以便把外设控制权交给飞控固件 */
 	/* just for paranoia's sake */
 	arch_flash_lock();
 
@@ -405,10 +412,16 @@ jump_to_app()
 	/* deinitialise the board */
 	board_deinit();
 
+	/* 3. 更改向量表地址至飞控固件的向量表 */
+    /* SCB_VTOR：寄存器，向量表偏移地址，地址0xE000ED08 */
+    /* APP_LOAD_ADDRESS：飞控固件起始地址。0x08004000（主控FMU），0x08001000（IO协处理器） */
+    //  SCB_VTOR = APP_LOAD_ADDRESS;
+
 	/* switch exception handlers to the application */
 	arch_setvtor((uint32_t)vec_base);
 
 	/* extract the stack and entrypoint from the app vector table and go */
+	///* 4. 重置堆栈并跳转至飞控固件 */
 	do_jump(app_base[0], app_base[1]);
 }
 

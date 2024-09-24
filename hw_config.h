@@ -73,11 +73,11 @@
 # define USBPRODUCTID                   0x0010
 # define BOOT_DELAY_ADDRESS             0x000001a0
 
-# define BOARD_TYPE                     5
-# define BOARD_FLASH_SECTORS            11
+# define BOARD_TYPE                     5  // 主板类型标识符。
+# define BOARD_FLASH_SECTORS            11 // 板载闪存扇区数。
 # define BOARD_FLASH_SIZE               (1024 * 1024)
 
-# define OSC_FREQ                       24
+# define OSC_FREQ                       24 // 晶振频率。
 
 # define BOARD_PIN_LED_ACTIVITY         GPIO15
 # define BOARD_PIN_LED_BOOTLOADER       GPIO14
